@@ -6,4 +6,4 @@ compatibility_date = "2026-11-12"
 [[d1_databases]]
 binding = "DB"
 database_name = "wedding-guests-2027"
-database_id = "00000000-0000-0000-0000-000000000000"
+database_id = "327e18c9-3099-478e-bdfa-3adfdc13704c"
