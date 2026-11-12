@@ -3,18 +3,27 @@
 <html lang="el">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport"
-        content="width=device-width, initial-scale=1">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <title>Γάμος & Βάπτιση | Βρες το τραπέζι σου</title>
+
+  <script
+    src="https://challenges.cloudflare.com/turnstile/v0/api.js"
+    async
+    defer>
+  </script>
+
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
       min-height: 100vh;
       background: #f8f5ee;
       color: #514a40;
-      font-family: Georgia, serif;
+      font-family: Georgia, "Times New Roman", serif;
       display: grid;
       place-items: center;
       padding: 24px;
@@ -43,7 +52,9 @@
       margin: 18px 0;
     }
 
-    p { line-height: 1.7; }
+    p {
+      line-height: 1.7;
+    }
 
     input {
       width: 100%;
@@ -52,6 +63,13 @@
       border-radius: 8px;
       font-size: 16px;
       margin: 12px 0;
+      background: white;
+      color: #514a40;
+    }
+
+    input:focus {
+      outline: 2px solid #a88b59;
+      outline-offset: 2px;
     }
 
     button {
@@ -63,9 +81,24 @@
       border-radius: 8px;
       font-size: 16px;
       cursor: pointer;
+      margin-top: 12px;
     }
 
-    button:disabled { opacity: .6; }
+    button:hover {
+      background: #927648;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+
+    .turnstile-container {
+      display: flex;
+      justify-content: center;
+      margin: 18px 0 8px;
+      min-height: 65px;
+    }
 
     .group {
       margin-top: 25px;
@@ -74,9 +107,16 @@
       border-radius: 10px;
     }
 
+    .group h2 {
+      font-size: 20px;
+      font-weight: normal;
+      margin: 0 0 12px;
+    }
+
     .person {
       display: flex;
       justify-content: space-between;
+      align-items: center;
       gap: 15px;
       padding: 12px 0;
       border-bottom: 1px solid #eee6da;
@@ -84,7 +124,9 @@
       font-size: 14px;
     }
 
-    .person:last-child { border: 0; }
+    .person:last-child {
+      border-bottom: 0;
+    }
 
     .table {
       color: #a88b59;
@@ -92,84 +134,193 @@
       white-space: nowrap;
     }
 
-    #message { margin-top: 20px; }
+    #message {
+      margin-top: 20px;
+      line-height: 1.6;
+    }
 
     footer {
       margin-top: 30px;
       font-size: 13px;
       color: #9b8d79;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 400px) {
+      .card {
+        padding: 30px 16px;
+      }
+
+      h1 {
+        font-size: 27px;
+      }
+
+      .person {
+        flex-wrap: wrap;
+      }
     }
   </style>
 </head>
 
 <body>
   <main class="card">
-    <div class="eyebrow">ΓΑΜΟΣ & ΒΑΠΤΙΣΗ</div>
+
+    <div class="eyebrow">
+      ΓΑΜΟΣ & ΒΑΠΤΙΣΗ
+    </div>
 
     <h1>Βρες το τραπέζι σου</h1>
 
     <p>
-      Καλώς ήρθατε στη γιορτή μας!<br>
+      Καλώς ήρθατε στη γιορτή μας!
+      <br>
       Πληκτρολογήστε το επίθετό σας για να
       βρείτε τις θέσεις της παρέας σας.
     </p>
 
     <form id="searchForm">
+
       <input
         id="surname"
+        name="surname"
+        type="text"
         placeholder="π.χ. Ιωάννου"
         autocomplete="family-name"
+        aria-label="Επίθετο"
+        maxlength="60"
         required
       >
+
+      <div class="turnstile-container">
+        <div
+          class="cf-turnstile"
+          data-sitekey="0x4AAAAAAF-Av-NiztnaIZrX"
+          data-theme="light"
+          data-callback="onTurnstileSuccess"
+          data-expired-callback="onTurnstileExpired"
+          data-error-callback="onTurnstileExpired">
+        </div>
+      </div>
+
       <button id="searchButton" type="submit">
         Αναζήτηση
       </button>
+
     </form>
 
-    <div id="message" role="status" aria-live="polite"></div>
+    <div
+      id="message"
+      role="status"
+      aria-live="polite">
+    </div>
+
     <div id="results"></div>
 
     <footer>
-      Να περάσετε τέλεια! ♡<br>
+      Να περάσετε τέλεια! ♥
+      <br>
       3 Μαΐου 2027 · Event Plaza
     </footer>
+
   </main>
 
   <script>
+    let turnstileToken = "";
+
+    function onTurnstileSuccess(token) {
+      turnstileToken = token;
+    }
+
+    function onTurnstileExpired() {
+      turnstileToken = "";
+    }
+
+    function resetTurnstile() {
+      turnstileToken = "";
+
+      if (
+        window.turnstile &&
+        typeof window.turnstile.reset === "function"
+      ) {
+        window.turnstile.reset();
+      }
+    }
+
     const form = document.getElementById("searchForm");
     const button = document.getElementById("searchButton");
     const message = document.getElementById("message");
     const results = document.getElementById("results");
+    const surnameInput = document.getElementById("surname");
 
     form.addEventListener("submit", async (event) => {
       event.preventDefault();
 
-      const surname =
-        document.getElementById("surname").value.trim();
+      const surname = surnameInput.value.trim();
 
       results.replaceChildren();
-      message.textContent = "Αναζήτηση...";
+      message.textContent = "";
+
+      if (!surname) {
+        message.textContent =
+          "Παρακαλώ πληκτρολογήστε το επίθετό σας.";
+        return;
+      }
+
+      if (!turnstileToken) {
+        message.textContent =
+          "Ολοκληρώστε πρώτα τον έλεγχο ασφαλείας.";
+        return;
+      }
+
       button.disabled = true;
+      message.textContent = "Αναζήτηση...";
 
       try {
         const response = await fetch("/api/lookup", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({ surname }),
-  cache: "no-store"
-});
-
-        if (!response.ok) {
-          throw new Error("Search failed");
-        }
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            surname: surname,
+            turnstileToken: turnstileToken
+          }),
+          cache: "no-store"
+        });
 
         const data = await response.json();
 
-        if (!data.groups || data.groups.length === 0) {
+        if (!response.ok) {
+          if (response.status === 429) {
+            message.textContent =
+              "Έγιναν πολλές αναζητήσεις. " +
+              "Παρακαλώ δοκιμάστε ξανά αργότερα.";
+            return;
+          }
+
+          if (
+            response.status === 403 ||
+            response.status === 401
+          ) {
+            message.textContent =
+              "Ο έλεγχος ασφαλείας απέτυχε. " +
+              "Παρακαλώ δοκιμάστε ξανά.";
+            return;
+          }
+
           message.textContent =
-            "Δεν βρέθηκε παρέα. Ρωτήστε στην υποδοχή.";
+            data.error ||
+            "Η αναζήτηση δεν είναι διαθέσιμη αυτή τη στιγμή.";
+          return;
+        }
+
+        if (
+          !Array.isArray(data.groups) ||
+          data.groups.length === 0
+        ) {
+          message.textContent =
+            "Δεν βρέθηκε παρέα με αυτό το επίθετο. " +
+            "Ρωτήστε στην υποδοχή.";
           return;
         }
 
@@ -180,22 +331,26 @@
           section.className = "group";
 
           const heading = document.createElement("h2");
-          heading.textContent = group.name;
+          heading.textContent = group.name || "Η παρέα σας";
           section.appendChild(heading);
+
+          if (!Array.isArray(group.members)) {
+            continue;
+          }
 
           for (const person of group.members) {
             const row = document.createElement("div");
             row.className = "person";
 
             const name = document.createElement("span");
-            name.textContent = person.full_name;
+            name.textContent = person.full_name || "";
 
             const table = document.createElement("span");
             table.className = "table";
-            table.textContent =
-              person.table_number
-                ? "Τραπέζι " + person.table_number
-                : "Ρωτήστε στην υποδοχή";
+
+            table.textContent = person.table_number
+              ? "Τραπέζι " + person.table_number
+              : "Ρωτήστε στην υποδοχή";
 
             row.append(name, table);
             section.appendChild(row);
@@ -204,11 +359,13 @@
           results.appendChild(section);
         }
 
-      } catch {
+      } catch (error) {
         message.textContent =
-          "Η αναζήτηση δεν είναι διαθέσιμη αυτή τη στιγμή.";
+          "Η αναζήτηση δεν είναι διαθέσιμη " +
+          "αυτή τη στιγμή. Δοκιμάστε ξανά.";
       } finally {
         button.disabled = false;
+        resetTurnstile();
       }
     });
   </script>
