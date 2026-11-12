@@ -1,0 +1,216 @@
+
+<!DOCTYPE html>
+<html lang="el">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport"
+        content="width=device-width, initial-scale=1">
+  <title>Γάμος & Βάπτιση | Βρες το τραπέζι σου</title>
+  <style>
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: #f8f5ee;
+      color: #514a40;
+      font-family: Georgia, serif;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+
+    .card {
+      width: 100%;
+      max-width: 480px;
+      padding: 38px 25px;
+      background: #fffdf9;
+      border: 1px solid #d9c6a4;
+      border-radius: 16px;
+      text-align: center;
+      box-shadow: 0 8px 35px #00000008;
+    }
+
+    .eyebrow {
+      color: #a88b59;
+      letter-spacing: 3px;
+      font-size: 12px;
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: normal;
+      margin: 18px 0;
+    }
+
+    p { line-height: 1.7; }
+
+    input {
+      width: 100%;
+      padding: 15px;
+      border: 1px solid #d9c6a4;
+      border-radius: 8px;
+      font-size: 16px;
+      margin: 12px 0;
+    }
+
+    button {
+      width: 100%;
+      padding: 15px;
+      background: #a88b59;
+      color: white;
+      border: 0;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button:disabled { opacity: .6; }
+
+    .group {
+      margin-top: 25px;
+      padding: 18px;
+      border: 1px solid #e7ddcb;
+      border-radius: 10px;
+    }
+
+    .person {
+      display: flex;
+      justify-content: space-between;
+      gap: 15px;
+      padding: 12px 0;
+      border-bottom: 1px solid #eee6da;
+      text-align: left;
+      font-size: 14px;
+    }
+
+    .person:last-child { border: 0; }
+
+    .table {
+      color: #a88b59;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    #message { margin-top: 20px; }
+
+    footer {
+      margin-top: 30px;
+      font-size: 13px;
+      color: #9b8d79;
+    }
+  </style>
+</head>
+
+<body>
+  <main class="card">
+    <div class="eyebrow">ΓΑΜΟΣ & ΒΑΠΤΙΣΗ</div>
+
+    <h1>Βρες το τραπέζι σου</h1>
+
+    <p>
+      Καλώς ήρθατε στη γιορτή μας!<br>
+      Πληκτρολογήστε το επίθετό σας για να
+      βρείτε τις θέσεις της παρέας σας.
+    </p>
+
+    <form id="searchForm">
+      <input
+        id="surname"
+        placeholder="π.χ. Ιωάννου"
+        autocomplete="family-name"
+        required
+      >
+      <button id="searchButton" type="submit">
+        Αναζήτηση
+      </button>
+    </form>
+
+    <div id="message" role="status" aria-live="polite"></div>
+    <div id="results"></div>
+
+    <footer>
+      Να περάσετε τέλεια! ♡<br>
+      3 Μαΐου 2027 · Event Plaza
+    </footer>
+  </main>
+
+  <script>
+    const form = document.getElementById("searchForm");
+    const button = document.getElementById("searchButton");
+    const message = document.getElementById("message");
+    const results = document.getElementById("results");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      const surname =
+        document.getElementById("surname").value.trim();
+
+      results.replaceChildren();
+      message.textContent = "Αναζήτηση...";
+      button.disabled = true;
+
+      try {
+        const response = await fetch("/api/lookup", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({ surname }),
+  cache: "no-store"
+});
+
+        if (!response.ok) {
+          throw new Error("Search failed");
+        }
+
+        const data = await response.json();
+
+        if (!data.groups || data.groups.length === 0) {
+          message.textContent =
+            "Δεν βρέθηκε παρέα. Ρωτήστε στην υποδοχή.";
+          return;
+        }
+
+        message.textContent = "";
+
+        for (const group of data.groups) {
+          const section = document.createElement("section");
+          section.className = "group";
+
+          const heading = document.createElement("h2");
+          heading.textContent = group.name;
+          section.appendChild(heading);
+
+          for (const person of group.members) {
+            const row = document.createElement("div");
+            row.className = "person";
+
+            const name = document.createElement("span");
+            name.textContent = person.full_name;
+
+            const table = document.createElement("span");
+            table.className = "table";
+            table.textContent =
+              person.table_number
+                ? "Τραπέζι " + person.table_number
+                : "Ρωτήστε στην υποδοχή";
+
+            row.append(name, table);
+            section.appendChild(row);
+          }
+
+          results.appendChild(section);
+        }
+
+      } catch {
+        message.textContent =
+          "Η αναζήτηση δεν είναι διαθέσιμη αυτή τη στιγμή.";
+      } finally {
+        button.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>
